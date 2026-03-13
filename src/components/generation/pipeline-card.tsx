@@ -10,6 +10,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { GenerationStep, type StepStatus } from "./generation-step";
 import type {
@@ -30,6 +33,10 @@ import {
   generateMiniAppConfig,
   generateTwoWeekPlan,
 } from "@/lib/actions/generate";
+import {
+  publishCandidatePage,
+  unpublishCandidatePage,
+} from "@/lib/actions/publish";
 import { TEMPLATE_LABELS } from "@/lib/ai/template-schemas";
 
 interface PipelineCardProps {
@@ -280,6 +287,76 @@ export function PipelineCard({
           }
           content={twoWeekPlan?.plan_md ?? null}
         />
+
+        {/* Step 7: Publish */}
+        {statusAtLeast(status, "two_week_plan_generated") && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                    status === "published"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {status === "published" ? "\u2713" : "7"}
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Publish</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Make your candidate page publicly accessible
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={status === "published" ? "default" : "secondary"}>
+                  {status === "published" ? "Published" : "Ready"}
+                </Badge>
+                <Button
+                  size="sm"
+                  variant={status === "published" ? "outline" : "default"}
+                  disabled={generatingStep === 7 || isPending}
+                  onClick={() => {
+                    if (status === "published") {
+                      handleGenerate(7, () =>
+                        unpublishCandidatePage(candidatePage.id)
+                      );
+                    } else {
+                      setGeneratingStep(7);
+                      startTransition(async () => {
+                        try {
+                          const result = await publishCandidatePage(
+                            candidatePage.id
+                          );
+                          if (result.error) {
+                            toast.error(result.error);
+                          } else if (result.publicUrl) {
+                            toast.success(
+                              `Published! Public URL: ${window.location.origin}${result.publicUrl}`,
+                              { duration: 10000 }
+                            );
+                          }
+                        } catch {
+                          toast.error("An unexpected error occurred.");
+                        } finally {
+                          setGeneratingStep(null);
+                        }
+                      });
+                    }
+                  }}
+                >
+                  {generatingStep === 7
+                    ? "Processing..."
+                    : status === "published"
+                      ? "Unpublish"
+                      : "Publish"}
+                </Button>
+              </div>
+            </div>
+            <Separator />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

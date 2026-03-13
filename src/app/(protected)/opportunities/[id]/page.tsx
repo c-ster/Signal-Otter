@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { OpportunityForm } from "@/components/forms/opportunity-form";
 import { Badge } from "@/components/ui/badge";
 import { PipelineCard } from "@/components/generation/pipeline-card";
+import { MiniAppRenderer } from "@/components/mini-app/mini-app-renderer";
 import { isAIConfigured } from "@/lib/ai/client";
 import type { CandidatePageStatus } from "@/types/database";
 
@@ -124,6 +125,12 @@ export default async function OpportunityDetailPage({
           twoWeekPlan={twoWeekPlan}
           aiConfigured={aiConfigured}
           hasRequiredFields={hasRequiredFields}
+        />
+      )}
+
+      {miniProject?.app_config_json && (
+        <MiniAppRenderer
+          appConfig={miniProject.app_config_json as Record<string, unknown>}
         />
       )}
     </div>
