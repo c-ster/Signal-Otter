@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { OpportunityForm } from "@/components/forms/opportunity-form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { PipelineCard } from "@/components/generation/pipeline-card";
+import { isAIConfigured } from "@/lib/ai/client";
 import type { CandidatePageStatus } from "@/types/database";
 
 const statusLabels: Record<CandidatePageStatus, string> = {
@@ -46,6 +46,53 @@ export default async function OpportunityDetailPage({
     .eq("opportunity_id", id)
     .single();
 
+  // Fetch generation-related data if candidate page exists
+  let miniProject = null;
+  let miniPrd = null;
+  let miniTodo = null;
+  let twoWeekPlan = null;
+
+  if (candidatePage) {
+    const { data: mp } = await supabase
+      .from("mini_projects")
+      .select("*")
+      .eq("candidate_page_id", candidatePage.id)
+      .maybeSingle();
+
+    miniProject = mp;
+
+    if (miniProject) {
+      const [prdRes, todoRes, planRes] = await Promise.all([
+        supabase
+          .from("mini_prds")
+          .select("*")
+          .eq("mini_project_id", miniProject.id)
+          .maybeSingle(),
+        supabase
+          .from("mini_todos")
+          .select("*")
+          .eq("mini_project_id", miniProject.id)
+          .maybeSingle(),
+        supabase
+          .from("two_week_plans")
+          .select("*")
+          .eq("mini_project_id", miniProject.id)
+          .maybeSingle(),
+      ]);
+
+      miniPrd = prdRes.data;
+      miniTodo = todoRes.data;
+      twoWeekPlan = planRes.data;
+    }
+  }
+
+  const aiConfigured = isAIConfigured();
+  const hasRequiredFields = !!(
+    opportunity.company_name &&
+    opportunity.role_title &&
+    opportunity.job_description
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -69,35 +116,15 @@ export default async function OpportunityDetailPage({
       <OpportunityForm opportunity={opportunity} />
 
       {candidatePage && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Candidate Page Pipeline</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Your candidate page is in{" "}
-              <strong>
-                {statusLabels[candidatePage.status as CandidatePageStatus]}
-              </strong>{" "}
-              status. Use the AI generation tools to build your page step by
-              step.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button disabled>
-                Generate Problem & Template (Phase B)
-              </Button>
-              <Button disabled variant="outline">
-                Generate Summary (Phase B)
-              </Button>
-              <Button disabled variant="outline">
-                Generate PRD (Phase B)
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              AI generation features coming in Phase B.
-            </p>
-          </CardContent>
-        </Card>
+        <PipelineCard
+          candidatePage={candidatePage}
+          miniProject={miniProject}
+          miniPrd={miniPrd}
+          miniTodo={miniTodo}
+          twoWeekPlan={twoWeekPlan}
+          aiConfigured={aiConfigured}
+          hasRequiredFields={hasRequiredFields}
+        />
       )}
     </div>
   );
