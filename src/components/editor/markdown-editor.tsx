@@ -19,7 +19,11 @@ export function MarkdownEditor({
   placeholder,
   label,
 }: MarkdownEditorProps) {
-  const [mode, setMode] = useState<"edit" | "preview" | "split">("split");
+  // Default to "edit" on mobile, "split" on desktop
+  const [mode, setMode] = useState<"edit" | "preview" | "split">(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) return "edit";
+    return "split";
+  });
 
   return (
     <div className="space-y-2">

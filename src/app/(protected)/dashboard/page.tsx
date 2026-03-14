@@ -122,6 +122,23 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {(!opportunities || opportunities.length === 0) && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <h3 className="text-lg font-semibold">
+              Create your first opportunity
+            </h3>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Target a specific company and role to generate your first
+              AI-powered capability page.
+            </p>
+            <Button className="mt-4" render={<Link href="/opportunities/new" />}>
+              Add Opportunity
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {opportunities && opportunities.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
