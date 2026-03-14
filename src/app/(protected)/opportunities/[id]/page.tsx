@@ -4,8 +4,21 @@ import { OpportunityForm } from "@/components/forms/opportunity-form";
 import { Badge } from "@/components/ui/badge";
 import { PipelineCard } from "@/components/generation/pipeline-card";
 import { MiniAppRenderer } from "@/components/mini-app/mini-app-renderer";
+import { PageEditor } from "@/components/editor/page-editor";
 import { isAIConfigured } from "@/lib/ai/client";
 import type { CandidatePageStatus } from "@/types/database";
+
+const STATUS_ORDER: CandidatePageStatus[] = [
+  "draft",
+  "intake_complete",
+  "problem_selected",
+  "narrative_generated",
+  "prd_generated",
+  "todo_generated",
+  "mini_app_generated",
+  "two_week_plan_generated",
+  "published",
+];
 
 const statusLabels: Record<CandidatePageStatus, string> = {
   draft: "Draft",
@@ -127,6 +140,12 @@ export default async function OpportunityDetailPage({
           hasRequiredFields={hasRequiredFields}
         />
       )}
+
+      {candidatePage &&
+        STATUS_ORDER.indexOf(candidatePage.status as CandidatePageStatus) >=
+          STATUS_ORDER.indexOf("narrative_generated") && (
+          <PageEditor candidatePage={candidatePage} />
+        )}
 
       {miniProject?.app_config_json && (
         <MiniAppRenderer
